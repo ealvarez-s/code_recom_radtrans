@@ -118,9 +118,6 @@ C     definition of namelist
 #ifdef ALLOW_SINK_INCREASE
      &     Vdet_a, Vdet_b,
 #endif
-#ifdef RECOM_IRON_LITHOGENIC_PARTICLES
-     &     Vdust, k_coag, k_disagg, kScavFe_dust, 
-#endif
      &     f_TEP, x, agg_PCHO, agg_TEP, agg_PD, agg_PP,
      &     rho_N, rho_C1, rho_C2,
      &     decayRateBenN, decayRateBenC, decayRateBenSi,
@@ -140,37 +137,12 @@ C     definition of namelist
      &     write_flag, useReminSiT, FeLimit,
      & 
      &     kScavFe, totalLigand, ligandStabConst,
-#ifdef  RECOM_IRON_TWO_LIGANDS
-     &     ligandStabConst_str,
-#endif
      &     NMinSlope, NMaxSlope, SiMinSlope, SiMaxSlope,
      &     ini, ini_Si, ini_Fe, k_CO2,  
      &     bio_step,
      &     calc_prod_ratio, 
      &     calc_diss_guts,
      &     calc_diss_rate,
-#if defined RECOM_MANY_LIGANDS
-     &     lig2n, remlig, lig_phred, lig2n2, lig_upt,
-#elif defined RECOM_IRON_VARIABLE_LIGANDS
-#ifdef  RECOM_IRON_TWO_LIGANDS
-#ifdef RECOM_IRON_LIGANDS_CARBON
-     &     lig2c, lig2c_str, remlig, remlig_str, lig_phred, 
-     &     lig_phred_str, lig_upt, lig_upt_str, lig_lco, lig_lco_str,
-#else
-     &     lig2n, lig2n_str, remlig, remlig_str, lig_phred, 
-     &     lig_phred_str, lig_upt, lig_upt_str, lig_lco, lig_lco_str,
-#endif
-#else
-#ifdef RECOM_IRON_LIGANDS_CARBON
-     &     lig2c, remlig, lig_phred, lig2c2, lig_upt, lig_lco,
-#else
-     &     lig2n, remlig, lig_phred, lig2n2, lig_upt, lig_lco, 
-#endif
-#endif
-#endif
-#ifdef RECOM_IRON_HYDROTHERMAL
-     &      hydro_lig2fe,
-#endif
      &     tiny
 
 #ifdef RECOM_WAVEBANDS
@@ -348,21 +320,6 @@ C     set the defaults
       Vdet_a         = 0.0288
       Vdet_b         = 20.
 #endif
-#ifdef RECOM_IRON_LITHOGENIC_PARTICLES
-      Vdust          = 0.2
-C coagulation rate: k_coag1 from Ye et al. 2011: 
-C          4.5 (kg/l)^-1 s^-1
-C        = 3.888e-4 (micro-g/L)^-1 d^-1
-      k_coag         = 3.888e-4
-C disaggregation rate for inorganic dust from sinking aggregates: 
-C Unit is d^-1
-C dafault value: no disaggregation 
-      k_disagg       = 0.0
-C scavenging on dust particles from Ye et al. 2011:
-C          150*5=750 (kg/m3)^{-1} d^{-1}
-C          = 8.68e-9 (micro-g/L)^-1 s^-1
-      kScavFe_dust   = 8.68e-9
-#endif
       rho_N          = 0.1              
       rho_C1         = 0.1 
       rho_C2         = 0.1                  
@@ -412,9 +369,6 @@ C          = 8.68e-9 (micro-g/L)^-1 s^-1
       kScavFe         = 1.0D-3
       totalLigand     = 1.
       ligandStabConst = 100.
-#ifdef RECOM_IRON_TWO_LIGANDS
-      ligandStabConst_str = 1000.
-#endif
 
 CCV: The parameters ini, ini_si and ini_si do not seem to be used anywhere. Throw them out?
       ini            = 1.
@@ -435,65 +389,6 @@ C dissolution rate of CaCO3 in the water column (assumed independent from unders
 C following OCMIP-2 recipes). The value here is estimated from a 3500 m e-folding scale
 C and 20 m/day sinking speed of detritus. [1/second]
       calc_diss_rate  = 20.0/(3500.0*86400.0)
-
-#ifdef RECOM_MANY_LIGANDS
-      lig2n(1) = 1.0D0
-      lig2n(2) = 1.0D0
-      lig2n(3) = 1.0D0
-      lig2n(4) = 1.0D0
-      lig2n(5) = 1.0D0
-      remlig(1) = 1.0D0/(10.0D0  * 360.0D0)
-      remlig(2) = 1.0D0/(20.0D0  * 360.0D0)
-      remlig(3) = 1.0D0/(50.0D0  * 360.0D0)
-      remlig(4) = 1.0D0/(100.0D0 * 360.0D0)
-      remlig(5) = 1.0D0/(200.0D0 * 360.0D0)
-      lig_phred(1) = 0.0
-      lig_phred(2) = 0.0
-      lig_phred(3) = 0.0
-      lig_phred(4) = 0.0
-      lig_phred(5) = 0.0
-      rIRmax = 1.0D0/430.0D0
-      lig2n2(1) = 0.0D0
-      lig2n2(2) = 0.0D0
-      lig2n2(3) = 0.0D0
-      lig2n2(4) = 0.0D0
-      lig2n2(5) = 0.0D0
-      lig_upt(1) = 0.0D0
-      lig_upt(2) = 0.0D0
-      lig_upt(3) = 0.0D0
-      lig_upt(4) = 0.0D0
-      lig_upt(5) = 0.0D0
-#endif
-#ifdef RECOM_IRON_VARIABLE_LIGANDS
-#ifdef RECOM_IRON_TWO_LIGANDS
-#ifdef RECOM_IRON_LIGANDS_CARBON
-      lig2c = 1.0D0
-      lig2c_str = 1.0D0
-#else
-      lig2n = 1.0D0
-      lig2n_str = 1.0D0
-#endif
-#else
-#ifdef RECOM_IRON_LIGANDS_CARBON
-      lig2c = 1.0D0
-      lig2c2 = 1.0D0
-#else
-      lig2n = 1.0D0
-      lig2n2 = 1.0D0
-#endif
-#endif
-      remlig = 1.0D0/(10.0D0  * 360.0D0)
-      lig_phred = 0.0
-      lig_upt = 0.0D0
-      lig_lco = 0.0D0
-#ifdef RECOM_IRON_TWO_LIGANDS
-      remlig_str = 1.0D0/(10.0D0  * 360.0D0)
-      lig_phred_str = 0.0
-      lig_upt_str = 0.0D0
-      lig_lco_str = 0.0D0
-#endif
-      rIRmax = 1.0D0/430.0D0
-#endif
 C     This value sets the minimum value a recom variable can have.
 C     The default may be too small for some highly variable cases and may
 C     lead (and has lead) to numerical instabilities in DIC
@@ -664,12 +559,6 @@ C     diagnostic
        write(*,*) 'S/R recom_readparms: Vdet_a        = ', Vdet_a
        write(*,*) 'S/R recom_readparms: Vdet_b        = ', Vdet_b
 #endif
-#ifdef RECOM_IRON_LITHOGENIC_PARTICLES
-       write(*,*) 'S/R recom_readparms: Vdust         = ', Vdust
-       write(*,*) 'S/R recom_readparms: k_coag        = ', k_coag
-       write(*,*) 'S/R recom_readparms: k_disagg      = ', k_disagg
-       write(*,*) 'S/R recom_readparms: kScavFe_dust  = ', kScavFe_dust
-#endif
        write(*,*) 'S/R recom_readparms: k_CO2         = ', k_CO2
        write(*,*) 'S/R recom_readparms: ini           = ', ini
        write(*,*) 'S/R recom_readparms: biosynth      = ', biosynth
@@ -719,13 +608,6 @@ C     diagnostic
        write(*,*) 'S/R recom_readparms: totalLigand   = ', totalLigand
        write(*,*) 'S/R recom_readparms: ligandStabConst = ', 
      &      ligandStabConst
-#ifdef RECOM_IRON_HYDROTHERMAL
-       write(*,*) 'S/R recom_readparms: hydro_lig2fe   = ', hydro_lig2fe
-#endif
-#ifdef RECOM_IRON_TWO_LIGANDS
-       write(*,*) 'S/R recom_readparms: ligandStabConst_str = ', 
-     &      ligandStabConst_str
-#endif
        write(*,*) 'S/R recom_readparms: NMinSlope     = ', NMinSlope
        write(*,*) 'S/R recom_readparms: NMaxSlope     = ', NMaxSlope
        write(*,*) 'S/R recom_readparms: SiMinSlope    = ', SiMinSlope
@@ -738,53 +620,6 @@ C     diagnostic
      &       calc_diss_guts
        write(*,*) 'S/R recom_readparms: calc_diss_rate = ',
      &       calc_diss_rate
-#ifdef RECOM_IRON_VARIABLE_LIGANDS
-#ifdef RECOM_IRON_TWO_LIGANDS
-#ifdef RECOM_IRON_LIGANDS_CARBON
-       write(*,*) 'S/R recom_readparms: lig2c = ',
-     &       lig2c
-       write(*,*) 'S/R recom_readparms: lig2c_str = ',
-     &       lig2c_str
-#else
-       write(*,*) 'S/R recom_readparms: lig2n = ',
-     &       lig2n
-       write(*,*) 'S/R recom_readparms: lig2n_str = ',
-     &       lig2n_str
-#endif
-#else
-#ifdef RECOM_IRON_LIGANDS_CARBON
-       write(*,*) 'S/R recom_readparms: lig2c = ',
-     &       lig2c
-       write(*,*) 'S/R recom_readparms: lig2c2 = ',
-     &       lig2c2
-#else
-       write(*,*) 'S/R recom_readparms: lig2n = ',
-     &       lig2n
-       write(*,*) 'S/R recom_readparms: lig2n2 = ',
-     &       lig2n2
-#endif
-#endif
-       write(*,*) 'S/R recom_readparms: remlig = ',
-     &      remlig
-       write(*,*) 'S/R recom_readparms: lig_phred = ',
-     &      lig_phred
-       write(*,*) 'S/R recom_readparms: lig_upt = ',
-     &      lig_upt
-       write(*,*) 'S/R recom_readparms: lig_lco = ',
-     &      lig_lco
-       write(*,*) 'S/R recom_readparms: iligw = ',iligw
-#ifdef RECOM_IRON_TWO_LIGANDS
-       write(*,*) 'S/R recom_readparms: remlig_str = ',
-     &      remlig_str
-       write(*,*) 'S/R recom_readparms: lig_phred_str = ',
-     &      lig_phred_str
-       write(*,*) 'S/R recom_readparms: lig_upt_str = ',
-     &      lig_upt_str
-       write(*,*) 'S/R recom_readparms: lig_lco_str = ',
-     &      lig_lco_str
-       write(*,*) 'S/R recom_readparms: iligs = ',iligs
-#endif
-#endif
 
       end if           
 
@@ -959,10 +794,6 @@ C
 #endif /* OASIM */
 
   
-#ifdef RECOM_IRON_HYDROTHERMAL
-      recom_hydroFile = ' '
-      hydro_lig2fe = 0. _d 0
-#endif /* RECOM_IRON_HYDROTHERMAL */					 
 #ifdef ALLOW_EXF
       pCO2startdate1 = 0
       pCO2startdate2 = 0

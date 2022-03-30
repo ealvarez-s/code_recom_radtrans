@@ -198,13 +198,7 @@ CTW   increaing  sinking velocity of detritus [d^{-1};m/d]
       _RL Vdet_b
 C-------------------------------------------------------
 #endif
-#ifdef RECOM_IRON_LITHOGENIC_PARTICLES
-C     Vdust: sinking speed of fine dust particles [m d^{-1}]
-C     kScavFe_dust: rate constant for scaveing on dust particles (kg m^{-3})^{-1} d^{-1})]
-C     k_coag: coagulation rate constant for fine dust particles
-C     k_disagg: disaggregation rate of dust from mixed aggregates
-      _RL Vdust, k_coag, k_disagg, kScavFe_dust
-#endif
+
 C     decay rate of detritus in the benthic layers [d^{-1}]
       _RL decayRateBenN
       _RL decayRateBenC
@@ -267,12 +261,6 @@ C     total free ligand [mumol m^{-3}] [order 1]
       _RL     totalLigand
 C     ligand-free iron stability constanty [m^{3}/mumol] [order 100]
       _RL     ligandStabConst
-#ifdef RECOM_IRON_TWO_LIGANDS
-      _RL     ligandStabConst_str
-#endif
-#ifdef RECOM_IRON_HYDROTHERMAL
-      _RL hydro_lig2fe
-#endif
 C     end iron chemistry parameters
 C     some external parameters (irrelevant to recom_sms and below
 C     deviation from Si2N for initial conditions  
@@ -330,28 +318,6 @@ C     slopes for limiting functions
       _RL calc_prod_ratio 
       _RL calc_diss_guts
       _RL calc_diss_rate
-#ifdef RECOM_MANY_LIGANDS
-      _RL lig2n(5), remlig(5), lig_phred(5), lig2n2(5), lig_upt(5)
-      _RL rIRmax
-#endif
-#ifdef RECOM_IRON_VARIABLE_LIGANDS
-#ifdef RECOM_IRON_TWO_LIGANDS
-#ifdef RECOM_IRON_LIGANDS_CARBON
-      _RL lig2c, lig2c_str, remlig, remlig_str,  lig_phred,
-     &    lig_phred_str, lig_upt, lig_upt_str, lig_lco, lig_lco_str 
-#else
-      _RL lig2n, lig2n_str, remlig, remlig_str,  lig_phred,
-     &    lig_phred_str, lig_upt, lig_upt_str, lig_lco, lig_lco_str 
-#endif
-#else
-#ifdef RECOM_IRON_LIGANDS_CARBON
-      _RL lig2c, remlig, lig_phred, lig2c2, lig_upt, lig_lco
-#else
-      _RL lig2n, remlig, lig_phred, lig2n2, lig_upt, lig_lco
-#endif
-#endif
-      _RL rIRmax
-#endif
 
 C     lower limit for variables (sometimes it is necessary for numerical
 C     stability reasons to increase this to 1e-8 or even 1e-6 )
@@ -497,12 +463,6 @@ C     celsius2K:: conversion of Celsius into Kelvin
      &                     Vdet_a,
      &                     Vdet_b, 
 #endif
-#ifdef RECOM_IRON_LITHOGENIC_PARTICLES
-     &                     Vdust,
-     &                     k_coag,
-     &                     k_disagg,
-     &			   kScavFe_dust,
-#endif
      &                     k_CO2,
      &                     ini,
      &                     biosynth,
@@ -537,42 +497,12 @@ C     celsius2K:: conversion of Celsius into Kelvin
      &                     kScavFe,
      &                     totalLigand,
      &                     ligandStabConst,
-#ifdef RECOM_IRON_TWO_LIGANDS
-     &                     ligandStabConst_str,
-#endif
      &                     ini_Si,
      &                     ini_Fe,
      &                     NMinSlope, NMaxSlope, SiMinSlope, SiMaxSlope,
      &                     calc_prod_ratio, 
      &                     calc_diss_guts,
      &                     calc_diss_rate,
-#ifdef RECOM_MANY_LIGANDS
-     &                     lig2n, remlig, lig2n2, lig_phred, 
-     &                     rIRmax, lig_upt,
-#endif
-#ifdef RECOM_IRON_VARIABLE_LIGANDS
-#ifdef RECOM_IRON_TWO_LIGANDS
-#ifdef RECOM_IRON_LIGANDS_CARBON
-     &                     lig2c, lig2c_str, remlig, remlig_str, 
-     &                     lig_phred, lig_phred_str,
-#else
-     &                     lig2n, lig2n_str, remlig, remlig_str, 
-     &                     lig_phred, lig_phred_str,
-#endif
-     &                     rIRmax, lig_upt, lig_upt_str, 
-     &                     lig_lco,lig_lco_str, 
-#else
-#ifdef RECOM_IRON_LIGANDS_CARBON
-     &                     lig2c, remlig, lig2c2, lig_phred,
-#else
-     &                     lig2n, remlig, lig2n2, lig_phred,
-#endif
-     &                     rIRmax, lig_upt, lig_lco,
-#endif
-#endif
-#ifdef RECOM_IRON_HYDROTHERMAL
-     &                     hydro_lig2fe,
-#endif
      &                     tiny
       
       COMMON /RECOM_INTERNAL_PARM_I/

@@ -133,9 +133,6 @@ C     resuspension variables
       _RL     erosionCoeff
       _RL     erosionFlux(1-OLx:sNx+OLx,1-OLy:sNy+OLy)
 CMS   implementing LithPartFlux
-#ifdef RECOM_IRON_LITHOGENIC_PARTICLES
-      _RS     ironLithParticleFluxLoc(1-OLx:sNx+OLx,1-OLy:sNy+OLy)
-#endif  /* RECOM_IRON_LITHOGENIC_PARTICLES */
 C     diagnostics auxilliary fields
       INTEGER idiag, ndiags3d_used
       _RL     recom_diag_integral(1-OLx:sNx+OLx,1-OLy:sNy+OLy,
@@ -192,12 +189,12 @@ CCEA    BIOMASS
        _RL phyD1_k(1-OLx:sNx+OLx,1-OLy:sNy+OLy, Nr)
        _RL diaD1_k(1-OLx:sNx+OLx,1-OLy:sNy+OLy, Nr)       
 #endif       
-CCEA for diagnostics
+CEA for diagnostics
        _RL a_kave(1-OLx:sNx+OLx,1-OLy:sNy+OLy, Nr)
        _RL acdom_kave(1-OLx:sNx+OLx,1-OLy:sNy+OLy, Nr)
        _RL apart_kave(1-OLx:sNx+OLx,1-OLy:sNy+OLy, Nr)
        _RL actot_ave(1-OLx:sNx+OLx,1-OLy:sNy+OLy, Nr)
-c  iops surface
+CEA iops surface
        _RL a_ksur(1-OLx:sNx+OLx,1-OLy:sNy+OLy, tlam)
        _RL acdom_ksur(1-OLx:sNx+OLx,1-OLy:sNy+OLy, tlam)
        _RL apart_ksur(1-OLx:sNx+OLx,1-OLy:sNy+OLy, tlam) 
@@ -277,9 +274,6 @@ C     initialise some local fields
         feDustFluxLoc(i,j) = 0. _d 0
         erosionFlux  (i,j) = 0. _d 0
 CCMS   initialise LithParticleFlux too
-#ifdef RECOM_IRON_LITHOGENIC_PARTICLES
-        ironLithParticleFluxLoc(i,j) = 0. _d 0
-#endif /* RECOM_IRON_LITHOGENIC_PARTICLES */
        ENDDO
       ENDDO
       DO idiag = 1,nDiagsREcoM3D
@@ -544,8 +538,8 @@ c cycle
               ENDDO  !j      
              enddo   !j
 
-c sum wavebands for total PAR at the mid point of the gridcell (PARl)
-CCEA sum wavebands for total PAR absorbed by phytoplankton (PURl)
+c   sum wavebands for total PAR at the mid point of the gridcell (PARl)
+CEA sum wavebands for total PAR absorbed by phytoplankton (PURl)
         DO j=jMin,jMax
           DO i=iMin,iMax
              PARl(i,j,k) = 0.
@@ -559,7 +553,7 @@ CCEA sum wavebands for total PAR absorbed by phytoplankton (PURl)
        ENDDO      !j          
 
 
-CCEA compute averages and wb=index for exporting
+CEA compute averages and wb=index for exporting
         DO j=jMin,jMax
           DO i=iMin,iMax
              a_kave(i,j,k) = 0.d0
@@ -619,7 +613,7 @@ C Compute total absorption/scattering coefficients
        DO ilam = 1,tlam
         DO j=jMin,jMax
          DO i=iMin,iMax                    
-c   absorption by phyto: if RADTRANS actot is computed twice
+c   absorption by phyto: if RADTRANS, actot is computed twice
             actot(i,j,k,ilam) = 0.0
             bctot(i,j,k,ilam) = 0.0
             bbctot(i,j,k,ilam) = 0.0
@@ -668,7 +662,7 @@ c   initialize output variables
 C ------ Propagate three-beam light in the water column -------  
         DO j=jMin,jMax
          DO i=iMin,iMax
-CEA Some of the routines use drF and others dz_k, why?                         
+CEA Some of the routines use drF and others dz_k                         
          IF (darwin_radtrans_niter.GE.0) THEN
            call MONOD_RADTRANS_ITER(
      I               dz_k(i,j,1:Nr),rmud(i,j),
@@ -722,7 +716,7 @@ CEA Some of the routines use drF and others dz_k, why?
       
 c     Uses chl from prev timestep (as wavebands does) keep like this in case
 c     need to consider upwelling irradiance as affecting the grid box above
-c     Pass to sms: PARw_k only, but will be for this timestep for RADTRANST
+c     Pass to sms: PARw_k only, but will be for this timestep for RADTRANS
 c     and previous timestep for WAVEBANDS.
 c
 c     Now copy
@@ -752,7 +746,7 @@ c     Now copy
          ENDDO    !i
        ENDDO      !j          
 
-CCEA Compute averages and wb=index for exporting
+CEA Compute averages and wb=index for exporting
       
         DO j=jMin,jMax
          DO i=iMin,iMax
@@ -963,19 +957,9 @@ C     now copy back some variables
 CCV#ifdef ALLOW_RECOM_FEINPUT
          feDustFluxLoc(i,j) = feDustDeposit(i,j,bi,bj)
 CCV#endif /* ALLOW_RECOM_FEINPUT */
-CMS RECOM_IRON_LITHOGENIC_PARTICLES
 #ifdef RECOM_O2
          FluxO2(I,J,bi,bj) = FluxO2Loc(I,J)*maskC(I,J,kSurface,bi,bj)
 #endif /* RECOM_O2 */
-#ifdef RECOM_IRON_LITHOGENIC_PARTICLES
-CMS calculate ironLithogenicParticleFluxLoc
-CMS feDustDeposit :: iron dust deposition at the surface, in mumol/m^2/s
-CMS vgl.: RECOM.h l.150
-CMS so get it in mug/m^2/s by multipliing with M = 56 g/mol
-CMS fe is 3.5% of dust so reverse it by multipliing with 100/3.5
-CMS divide by 1000 to get it in mg/m^2/s
-	 ironLithParticleFluxLoc(i,j) = feDustDeposit(i,j,bi,bj)*56*0.1/3.5
-#endif  /* RECOM_IRON_LITHOGENIC_PARTICLES */
         ENDIF
        ENDDO
       ENDDO
@@ -991,15 +975,10 @@ CCV#ifdef ALLOW_RECOM_FEINPUT
          feDustFluxLoc(i,j) = feDustFluxLoc(i,j)
      &        *(1.0 _d 0 - AREA(i,j,bi,bj))
 CCV#endif /* ALLOW_RECOM_FEINPUT */
-CMS RECOM_IRON_LITHOGENIC_PARTICLES
 #ifdef RECOM_O2
          FluxO2(i,j,bi,bj) = FluxO2(i,j,bi,bj)
      &        *(1.0 _d 0 - AREA(i,j,bi,bj))
 #endif /* RECOM_O2 */
-#ifdef RECOM_IRON_LITHOGENIC_PARTICLES
-	 ironLithParticleFluxLoc(i,j) = ironLithParticleFluxLoc(i,j)
-     &        *(1.0 _d 0 - AREA(i,j,bi,bj))
-#endif /* RECOM_IRON_LITHOGENIC_PARTICLES */
         ENDDO
        ENDDO
       ENDIF
@@ -1014,15 +993,10 @@ CCV#ifdef ALLOW_RECOM_FEINPUT
          feDustFluxLoc(i,j) = feDustFluxLoc(i,j)
      &        *(1.0 _d 0 - iceMask(i,j,bi,bj))
 CCV#endif /* ALLOW_RECOM_FEINPUT */
-CMS RECOM_IRON_LITHOGENIC_PARTICLES
 #ifdef RECOM_O2
          FluxO2(i,j,bi,bj) = FluxO2(i,j,bi,bj)
      &        *(1.0 _d 0 - iceMask(i,j,bi,bj))
 #endif /* RECOM_O2 */
-#ifdef RECOM_IRON_LITHOGENIC_PARTICLES
-	 ironLithParticleFluxLoc(i,j) = ironLithParticleFluxLoc(i,j)
-     &        *(1.0 _d 0 - iceMask(i,j,bi,bj))
-#endif /* RECOM_IRON_LITHOGENIC_PARTICLES */
         ENDDO
        ENDDO
       ENDIF	
@@ -1077,23 +1051,10 @@ C     very shallow regions with high velocities)
      &        pTracer(i,j,krLoc,bi,bj,iFe)
      &        + erosionFlux(i,j)*dTtracerLev(krLoc)
      &        * recip_drF(krLoc) * _recip_hFacC(i,j,krLoc,bi,bj)
-C     MS Implementing RECOM_IRON_LITHOGENIC_PARTICLES
 #ifdef RECOM_O2
          surfaceForcingPtr(i,j,bi,bj,ioxy) = 
      &        - FluxO2(i,j,bi,bj)/recom_secondsPerDay
 #endif /* RECOM_O2 */
-#ifdef RECOM_IRON_LITHOGENIC_PARTICLES
-         surfaceForcingPtr(i,j,bi,bj,iDust) = 
-     &        - maskC(i,j,kSurface,bi,bj)
-     &       * ironLithParticleFluxLoc(i,j)
-c         surfaceForcingPtr(i,j,bi,bj,iDust) = 
-c     &        - maskC(i,j,kSurface,bi,bj) * 1.0
-         pTracer(i,j,ksurface,bi,bj,iDust) =
-     &        pTracer(i,j,ksurface,bi,bj,iDust)
-     &        - surfaceForcingPtr(i,j,bi,bj,iDust)
-     &        * recip_drF(kSurface)*recip_hFacC(i,j,kSurface,bi,bj)
-     &        * dTtracerLev(kSurface)
-#endif /* RECOM_IRON_LITHOGENIC_PARTICLES */
 CCV#endif /* ALLOW_RECOM_FEINPUT */
 C     copy global fields to local arrays
          BenthicLayerloc(i,j,1) = benthicLayerN(i,j,bi,bj)
@@ -1110,28 +1071,6 @@ C     end if wet point
        ENDDO
       ENDDO
       
-#ifdef RECOM_IRON_HYDROTHERMAL
-C add hydrothermal flux to iron field
-      DO k=1,Nr
-       DO j=jMin,jMax
-        DO i=iMin,iMax
-         pTracer(i,j,k,bi,bj,iFe)=
-     &         pTracer(i,j,k,bi,bj,iFe)
-     &         + feHydrothermal(i,j,k,bi,bj) 
-     &         * maskC(i,j,k,bi,bj)
-     &         * dTtracerLev(kSurface)
-#ifdef RECOM_IRON_VARIABLE_LIGANDS
-         pTracer(i,j,k,bi,bj,iligw)=
-     &         pTracer(i,j,k,bi,bj,iligw)
-     &         + hydro_lig2fe * feHydrothermal(i,j,k,bi,bj) 
-     &         * maskC(i,j,k,bi,bj)
-     &         * dTtracerLev(kSurface)
-#endif /* RECOM_IRON_VARIABLE_LIGANDS */
-        ENDDO
-       ENDDO
-      ENDDO
-#endif /* RECOM_IRON_HYDROTHERMAL */
-
 C     call the bio-geo-chemical model
       CALL RECOM_SMS(iMin,iMax,jMin,jMax,bi,bj,
      I     Nr, klowC, PTRACERS_num, nDiagsREcoM3D, nDiagsREcoM2D,
@@ -1335,71 +1274,6 @@ C     vertical integral of 3D diagnostics
      &            'sinkcalc', 0, Nr, 2, bi, bj, myThid)
        endif
 #endif
-#ifdef RECOM_IRON_VARIABLE_LIGANDS
-       ndiags3d_used = 9
-#ifdef RECOM_MAREMIP
-     &    + 28
-#endif
-#ifdef RECOM_TWO_LIGANDS
-       if ( nDiagsREcom3D . GE. (ndiags3d_used+11) ) then
-        CALL DIAGNOSTICS_FILL(
-     &            recom_diag_3Dfields(1-OLx,1-OLy,1,ndiags3d_used+1),
-     &            'ligw_rem', 0, Nr, 2, bi, bj, myThid)
-        CALL DIAGNOSTICS_FILL(
-     &            recom_diag_3Dfields(1-OLx,1-OLy,1,ndiags3d_used+2),
-     &            'ligw_pho', 0, Nr, 2, bi, bj, myThid)
-        CALL DIAGNOSTICS_FILL(
-     &            recom_diag_3Dfields(1-OLx,1-OLy,1,ndiags3d_used+3),
-     &            'ligw_deg', 0, Nr, 2, bi, bj, myThid)
-        CALL DIAGNOSTICS_FILL(
-     &            recom_diag_3Dfields(1-OLx,1-OLy,1,ndiags3d_used+4),
-     &            'ligw_phd', 0, Nr, 2, bi, bj, myThid)
-        CALL DIAGNOSTICS_FILL(
-     &            recom_diag_3Dfields(1-OLx,1-OLy,1,ndiags3d_used+5),
-     &            'ligw_upt', 0, Nr, 2, bi, bj, myThid)
-        CALL DIAGNOSTICS_FILL(
-     &            recom_diag_3Dfields(1-OLx,1-OLy,1,ndiags3d_used+6),
-     &            'ligw_coa', 0, Nr, 2, bi, bj, myThid)
-        CALL DIAGNOSTICS_FILL(
-     &            recom_diag_3Dfields(1-OLx,1-OLy,1,ndiags3d_used+7),
-     &            'ligs_doc', 0, Nr, 2, bi, bj, myThid)
-        CALL DIAGNOSTICS_FILL(
-     &            recom_diag_3Dfields(1-OLx,1-OLy,1,ndiags3d_used+8),
-     &            'ligs_deg', 0, Nr, 2, bi, bj, myThid)
-        CALL DIAGNOSTICS_FILL(
-     &            recom_diag_3Dfields(1-OLx,1-OLy,1,ndiags3d_used+9),
-     &            'ligs_phd', 0, Nr, 2, bi, bj, myThid)
-        CALL DIAGNOSTICS_FILL(
-     &            recom_diag_3Dfields(1-OLx,1-OLy,1,ndiags3d_used+10),
-     &            'ligs_upt', 0, Nr, 2, bi, bj, myThid)
-        CALL DIAGNOSTICS_FILL(
-     &            recom_diag_3Dfields(1-OLx,1-OLy,1,ndiags3d_used+11),
-     &            'ligs_coa', 0, Nr, 2, bi, bj, myThid)
-       endif       
-#else
-       if ( nDiagsREcom3D . GE. (ndiags3d_used+6) ) then
-        CALL DIAGNOSTICS_FILL(
-     &            recom_diag_3Dfields(1-OLx,1-OLy,1,ndiags3d_used+1),
-     &            'ligsrrem', 0, Nr, 2, bi, bj, myThid)
-        CALL DIAGNOSTICS_FILL(
-     &            recom_diag_3Dfields(1-OLx,1-OLy,1,ndiags3d_used+2),
-     &            'ligsrdoc', 0, Nr, 2, bi, bj, myThid)
-        CALL DIAGNOSTICS_FILL(
-     &            recom_diag_3Dfields(1-OLx,1-OLy,1,ndiags3d_used+3),
-     &            'ligremin', 0, Nr, 2, bi, bj, myThid)
-        CALL DIAGNOSTICS_FILL(
-     &            recom_diag_3Dfields(1-OLx,1-OLy,1,ndiags3d_used+4),
-     &            'ligphot ', 0, Nr, 2, bi, bj, myThid)
-        CALL DIAGNOSTICS_FILL(
-     &            recom_diag_3Dfields(1-OLx,1-OLy,1,ndiags3d_used+5),
-     &            'liguptak', 0, Nr, 2, bi, bj, myThid)
-        CALL DIAGNOSTICS_FILL(
-     &            recom_diag_3Dfields(1-OLx,1-OLy,1,ndiags3d_used+6),
-     &            'lig_coag', 0, Nr, 2, bi, bj, myThid)
-       endif
-#endif /* RECOM_TWO_LIGANDS */
-#endif /* RECOM_VARIABLE_LIGANDS */ 
-
        
        IF ( nDiagsREcoM2D .GE. 4) THEN
         CALL DIAGNOSTICS_FILL(recom_diag_2Dfields(1-OLx,1-OLy,1),
@@ -1468,13 +1342,6 @@ C Diagnostics photodamage
 #ifdef RECOM_MAREMIP
      &    + 28
 #endif
-#ifdef RECOM_IRON_VARIABLE_LIGANDS
-#ifdef RECOM_IRON_TWO_LIGANDS
-     &    + 11
-#else        
-     &    + 6
-#endif
-#endif
        if ( nDiagsREcom3D . GE. (ndiags3d_used+8) ) then       
       CALL DIAGNOSTICS_FILL(recom_diag_3Dfields(1-OLx,1-OLy,1,
      &                        ndiags3d_used+1),
@@ -1512,13 +1379,6 @@ C Diagnostics Non-photosynthetic pigments
 #ifdef RECOM_MAREMIP
      &    + 28
 #endif
-#ifdef RECOM_IRON_VARIABLE_LIGANDS
-#ifdef RECOM_IRON_TWO_LIGANDS
-     &    + 11
-#else        
-     &    + 6
-#endif     
-#endif        
 #ifdef RECOM_PHOTODAMAGE
      &    + 8
 #endif
@@ -1545,13 +1405,6 @@ C     Diagnostics spectral light
 #ifdef RECOM_MAREMIP
      &    + 28
 #endif
-#ifdef RECOM_IRON_VARIABLE_LIGANDS
-#ifdef RECOM_IRON_TWO_LIGANDS
-     &    + 11
-#else        
-     &    + 6
-#endif     
-#endif        
 #ifdef RECOM_PHOTODAMAGE
      &    + 8
 #endif

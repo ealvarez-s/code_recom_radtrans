@@ -36,13 +36,6 @@ C----------------------------------
 #ifdef RECOM_MAREMIP
      &  + 28
 #endif
-#ifdef RECOM_IRON_VARIABLE_LIGANDS
-#ifdef RECOM_IRON_TWO_LIGANDS
-     &  + 11
-#else
-     &  + 6
-#endif
-#endif
 #ifdef RECOM_PHOTODAMAGE
      &  + 8
 #endif
@@ -112,9 +105,6 @@ C     recom_hydroFile  :: file name of hydrothermal iron source
       COMMON /RECOM_FILENAMES/
      &        recom_windFile, recom_pCO2File, recom_iceFile,
      &        recom_CaCO3File,
-#ifdef RECOM_IRON_HYDROTHERMAL
-     &        recom_hydroFile,
-#endif /* RECOM_IRON_HYDROTHERMAL */					 
 #ifdef RECOM_WAVEBANDS
      &        darwin_waterabsorbFile, darwin_phytoabsorbFile,
      &        darwin_surfacespecFile, darwin_acdomFile,
@@ -144,9 +134,6 @@ C     recom_hydroFile  :: file name of hydrothermal iron source
       CHARACTER*(MAX_LEN_FNAM) recom_ironFile
       CHARACTER*(MAX_LEN_FNAM) recom_silicaFile
       CHARACTER*(MAX_LEN_FNAM) recom_CaCO3File
-#ifdef RECOM_IRON_HYDROTHERMAL
-      CHARACTER*(MAX_LEN_FNAM) recom_hydroFile
-#endif /* RECOM_IRON_HYDROTHERMAL */
 #ifdef RECOM_WAVEBANDS
       CHARACTER*(MAX_LEN_FNAM) darwin_waterabsorbFile 
       CHARACTER*(MAX_LEN_FNAM) darwin_phytoabsorbFile
@@ -204,9 +191,6 @@ C     recom_hydroFile  :: file name of hydrothermal iron source
      &     recomShearStressMax, recomDragQuadratic,
      &     recom_windFile, recom_pCO2File,
      &     recom_CaCO3File,
-#ifdef RECOM_IRON_HYDROTHERMAL
-     &      recom_hydroFile,
-#endif /* RECOM_IRON_HYDROTHERMAL */					 
      &     recom_ironFile, recom_silicaFile
 #if defined(RECOM_WAVEBANDS) && defined(OASIM)					 
      &	   ,darwin_oasim_edFile01, darwin_oasim_edFile02
@@ -256,9 +240,6 @@ CCV#ifdef ALLOW_RECOM_SILICATE
       _RL  benthicLayerSi(1-OLx:sNx+OLx,1-OLy:sNy+OLy,nSx,nSy)
 CCV#endif /* ALLOW_RECOM_SILICATE */
       _RL  benthicLayerCaCO3(1-OLx:sNx+OLx,1-OLy:sNy+OLy,nSx,nSy)
-#ifdef RECOM_IRON_HYDROTHERMAL
-      _RS  feHydrothermal(1-OLx:sNx+OLx,1-OLy:sNy+OLy,Nr,nSx,nSy)
-#endif /* RECOM_IRON_HYDROTHERMAL */
   
 CTW increased sinking speed
 #ifdef ALLOW_SINK_INCREASE
@@ -278,9 +259,6 @@ CTW vertically increasing sinking speed
      &     , Vdetfast
 #endif /* ALLOW_SINK_INCREASE */
      &     , benthicLayerCaCO3
-#ifdef RECOM_IRON_HYDROTHERMAL
-     &     , feHydrothermal
-#endif /* RECOM_IRON_HYDROTHERMAL */					 
 #ifdef RECOM_WAVEBANDS
      &     , alpha_mean
      &     , alpha_mean_dia
@@ -354,21 +332,6 @@ C--------------------------------------------------------------------------
 #ifdef RECOM_CDOM
       integer icdom
 #endif
-#ifdef RECOM_IRON_PHOTOCHEM
-      integer ih2o2
-#endif
-#ifdef RECOM_IRON_VARIABLE_LIGANDS
-      integer iligw, iligs
-#endif
-#ifdef RECOM_MANY_LIGANDS
-      integer ilig1, ilig2, ilig3, ilig4, ilig5 
-#endif
-#ifdef RECOM_IRON_COLLOIDS
-      integer ifecoll
-#endif
-#ifdef RECOM_IRON_LITHOGENIC_PARTICLES
-      integer idust, ipart
-#endif
 #ifdef RECOM_MARSHALL
       integer id1, id1d
 #endif  
@@ -401,58 +364,12 @@ C--------------------------------------------------------------------------
       parameter (nvars_cdom=0)
 #endif
   
-#ifdef RECOM_IRON_PHOTOCHEM
-      parameter (nvars_iron_photo=1)
-      parameter (ih2o2 = nvars_base+1)
-#else
       parameter (nvars_iron_photo=0)
-#endif
-
-#ifdef RECOM_IRON_VARIABLE_LIGANDS
-#ifdef RECOM_IRON_TWO_LIGANDS
-      parameter (nvars_iron_lig=2)
-      parameter (iligw = nvars_base + nvars_zoo2 + 
-     &             nvars_cdom + nvars_iron_photo + 1,
-     &           iligs = nvars_base + nvars_zoo2 +
-     &             nvars_cdom + nvars_iron_photo + 2)
-#else
-      parameter (nvars_iron_lig=1)
-      parameter (iligw = nvars_base + nvars_zoo2 + 
-     &             nvars_cdom + nvars_iron_photo + 1)
-#endif
-#else
       parameter (nvars_iron_lig=0)
-#endif
-#ifdef RECOM_MANY_LIGANDS
-      parameter (nvars_iron_lig2=5)
-      parameter (ilig1 = nvars_base+nvars_zoo2+nvars_iron_photo+1, 
-     &           ilig2 = nvars_base+nvars_zoo2+nvars_iron_photo+2,
-     &           ilig3 = nvars_base+nvars_zoo2+nvars_iron_photo+3,
-     &           ilig4 = nvars_base+nvars_zoo2+nvars_iron_photo+4,
-     &           ilig5 = nvars_base+nvars_zoo2+nvars_iron_photo+5)
-#else
       parameter (nvars_iron_lig2=0)
-#endif
-
-#ifdef RECOM_IRON_COLLOIDS
-     parameter (nvars_iron_coll=1)
-      parameter (ifecoll = nvars_base+nvars_zoo2+nvars_cdom +
-     &    nvars_iron_photo+nvars_iron_lig+1)
-#else
       parameter (nvars_iron_coll=0)
-#endif
-
-#ifdef RECOM_IRON_LITHOGENIC_PARTICLES
-      parameter (nvars_iron_lith=2)
-      parameter (idust = nvars_base+nvars_zoo2+nvars_cdom +
-     &    nvars_iron_photo+
-     &    nvars_iron_lig+nvars_iron_lig2+nvars_iron_coll+1)
-      parameter (ipart = nvars_base+nvars_zoo2+nvars_cdom +
-     &    nvars_iron_photo+
-     &    nvars_iron_lig+nvars_iron_lig2+nvars_iron_coll+2)
-#else
       parameter (nvars_iron_lith=0)
-#endif
+  
 #ifdef RECOM_MARSHALL
       parameter (nvars_photo_damage=2)
       parameter (id1 =  nvars_base+nvars_zoo2+nvars_cdom +

@@ -7,7 +7,7 @@ C#include "DARWIN_OPTIONS.h"
 CBOP
 C !ROUTINE: RTWB_ACDOM
 
-c ANNA pass extra variables if WAVEBANDS
+c Only used if RECOM_CALC_ACDOM (if not, uses the file)
 C !INTERFACE: ==========================================================
       SUBROUTINE MONOD_ACDOM(
 #ifdef RECOM_CDOM
@@ -21,7 +21,7 @@ C !INTERFACE: ==========================================================
 C !DESCRIPTION:
 C     computes CDOM from Chlorophyll
 C
-c ANNA I have changed this a bit from WG code
+c AH changed this a bit from WG code
 c ------------- this is WG code:
 c      do k = 1,km
 c       actot450 = 0.0
@@ -99,8 +99,6 @@ c use cdom-like tracer
        enddo
       enddo
 #else
-c ANNA moved cdom calculation from WG's light.f
-c it's done for RADTRANS and WAVEBANDS_3D
       npmax = 2      
       do k = 1,Nr
        actot450 = 0.0 _d 0
@@ -117,7 +115,6 @@ c      do nl = 1,tlam
 c       write(6,*)'nl,lam,aw,ac,acdom = ',nl,lam(nl),
 c    *aw(nl),ac(1,nl),acdom(1,nl)
 c      enddo
-c ANNA cdom end
 #endif /* RECOM_CDOM */
 #endif /* RECOM_CALC_ACDOM */
 C#endif /* RECOM_WAVEBANDS */

@@ -1,8 +1,5 @@
-c ANNA WAVEBANDS_PARAMS.h define key paramters for wavebands
-c ANNA WAVEBANDS_PARAMS.h set number of wavebands, number of absorption 'types' here
-c
-c description: Key parameters for wavebands
-c      Anna Hickman Spring/Summer 2008
+C WAVEBANDS_PARAMS.h define key paramters for wavebands/radtrans
+C WAVEBANDS_PARAMS.h set number of wavebands, number of absorption 'types' here
 c      
 c Set parameters:
 c tlam = number of wavebands

@@ -20,19 +20,6 @@ C
 #define ALLOW_MITGCM
 
 C---------------------
-CCV  In REcoM-2, silicate and iron are always modeled; no need to
-CCV  set it here; delete this part later
-CC only possible or reasonable for REcoM with Silicate and Iron
-C#if NUMBER_OF_PTRACERS == 16
-C allow some extra output
-C#define ALLOW_RECOM_SILICATE
-C allow some extra fields to load iron dust decomposition into the model 
-C#define ALLOW_RECOM_FEINPUT
-C#endif /* NUMBER_OF_PTRACERS == 16 */
-CCV 
-CCV Instead we set a variable that says we are dealing with two 
-CCV phytoplankton classes. This is not used consistently yet!
-CCV
 CCV #define RECOM_2CLASSES
 #define RECOM_GRAZING_VARIABLE_PREFERENCE
 CCV june 2017: RECOM_CALCIFICATION is retired / always switched on
@@ -65,16 +52,7 @@ CCV many different additional diagnostics for the MAREMIP model intercomparison
 #define RECOM_MAREMIP
 
 C- settings for how complex iron chemistry should be
-#undef RECOM_IRON_PHOTOCHEM
-#undef RECOM_IRON_VARIABLE_LIGANDS
-#undef RECOM_IRON_TWO_LIGANDS
-#undef RECOM_LIGAND_VARIABLE_RATE
-#undef RECOM_IRON_LIGANDS_CARBON
-#undef RECOM_MANY_LIGANDS
-#undef RECOM_IRON_COLLOIDS
-#undef RECOM_IRON_LITHOGENIC_PARTICLES
 #define RECOM_IRON_BENTHOS
-#undef RECOM_IRON_HYDROTHERMAL
 
 CEA Chlorophyll loss term dependent on PAR and Chl:C		    
 #define RECOM_PHOTODAMAGE
@@ -88,11 +66,12 @@ CEA Radiative Transfer Model
 #define OASIM		    
 #define RECOM_CALC_ACDOM
 #define RECOM_CALC_APART
-#define RECOM_CALC_APHYT
 #define RECOM_2GROUPS		    
-#define RECOM_CALC_REFLEC
 #define RECOM_BMASS
-		    
+#define RECOM_CALC_REFLEC  
+CEA undef to keep chl-specific phyto absorption constant
+#undef RECOM_CALC_APHYT
+  
 C catch bad CPP-flag combination
 #ifdef DIC_BIOTIC
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

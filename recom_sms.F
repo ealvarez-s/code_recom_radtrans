@@ -127,14 +127,6 @@ C     state(:,21): detCalc (detritus calcium carbonate)
 C                  units: mumol/m^3
 C                  typical range: 0.1 < detCalc < 1.0 
 C
-#ifdef RECOM_IRON_LITHOGENIC_PARTICLES
-CMS   state(:,22): dust (small lithogenic particles)
-C                  units: mg/m^3
-C                  typical range: 8 < Dust < 48
-CMS   state(:,23): lithogenic fraction of detritus aggregates
-C                  units: mg/m^3
-C                  typical range: 8 < Dust < 48
-#endif
 #ifdef RECOM_ZOO2
 CMS   state(:,24): zoo2N (heterotrophic zooplankton on N-basis)
 C                  units: mmol/m^3
@@ -207,10 +199,6 @@ C     auxillary variables for the flux into the benthic layer
       _RL wFluxPhy(4)
       _RL wFluxDia(4)
       _RL decayBenthos(4)
-#ifdef RECOM_IRON_LITHOGENIC_PARTICLES
-C      _RL benthos(1-Olx:sNx+Olx,1-Oly:sNy+Oly,5)
-      _RL wFluxDust(2)
-#endif    
 C     [mmol m^{-3}]
       _RL sms    (1-Olx:sNx+Olx,1-Oly:sNy+Oly,Nz,nSx,nSy,bgc_num) 
 C-----
@@ -234,9 +222,6 @@ C     sinking velocities are positive downwards
       _RL vSinkPhy(1-Olx:sNx+Olx,1-Oly:sNy+Oly,1:Nz)
       _RL vSinkDia(1-Olx:sNx+Olx,1-Oly:sNy+Oly,1:Nz)
       _RL vSinkDet(1-Olx:sNx+Olx,1-Oly:sNy+Oly,1:Nz)
-#ifdef RECOM_IRON_LITHOGENIC_PARTICLES
-      _RL vSinkDust(1-Olx:sNx+Olx,1-Oly:sNy+Oly,1:Nz)
-#endif
 C     tendency due to sinking
       _RL sink    (1-Olx:sNx+Olx,1-Oly:sNy+Oly,1:Nz) ! [mmol m^{-3}]
 #ifdef RECOM_EXPORT_DIAGNOSTICS
@@ -430,35 +415,12 @@ C     Limiter function
       external recom_limiter
 
 C     external function to compute free iron
-#ifdef RECOM_IRON_TWO_LIGANDS
-      _RL iron_chemistry_2ligands
-      external iron_chemistry_2ligands
-      _RL feligw, feligs, ligw_uptake, ligs_uptake
-#else
       _RL iron_chemistry
       external iron_chemistry
-#endif
+
       _RL phyCalc, detCalc
       _RL calcification, calc_loss_agg, calc_loss_gra
-#ifdef RECOM_IRON_LITHOGENIC_PARTICLES
-      _RL dust, part_l
-#endif
-#ifdef RECOM_MANY_LIGANDS
-C     iron uptake per timestep (needed only for ligand dynamics)
-      _RL fe_uptake
-C     local ligand concentrations
-      _RL rlig1, rlig2, rlig3, rlig4, rlig5
-#endif
-#ifdef RECOM_IRON_VARIABLE_LIGANDS
-C     iron uptake per timestep (needed only for ligand dynamics)
-      _RL fe_uptake, coag
-C     local ligand concentrations
-#ifdef RECOM_IRON_TWO_LIGANDS
-      _RL rligw, rligs
-#else
-      _RL rligw
-#endif
-#endif
+
 #ifdef RECOM_LENA
       _RL P1, P2, Q0, Pslope, flena
 #endif
@@ -466,9 +428,7 @@ C     local ligand concentrations
 #ifdef RECOM_WAVEBANDS 
          integer ilam
          integer nl
-c ANNA for interpolation
          _RL cu_area
-c ANNA inportant but local variables that can be fogotten
          _RL PARwdn(tlam)         !light at bottom of local gridcell
          _RL attenwl(tlam)        !attenuation (m-1)
          _RL sumaphy_nl(tlam)     !total phyto absorption at each wavelength
@@ -485,18 +445,6 @@ c ANNA inportant but local variables that can be fogotten
 #endif
 #ifdef RECOM_CDOM
      &  + 1
-#endif
-#ifdef RECOM_IRON_VARIABLE_LIGANDS
-#ifdef RECOM_IRON_TWO_LIGANDS
-     &  + 2 
-#else
-     &  + 1 
-#endif
-#elif defined RECOM_MANY_LIGANDS
-     &  + 5 
-#endif
-#ifdef RECOM_IRON_LITHOGENIC_PARTICLES
-     &  + 2 
 #endif
 #ifdef RECOM_MARSHALL
      &  + 2
@@ -525,10 +473,6 @@ C
 C      calc_diss_rate = 20.0/(3500*86400)
 
 CMS Probably not necessary, but to keep the structure:
-#ifdef RECOM_IRON_LITHOGENIC_PARTICLES
-       wFluxDust(1)     = 0.
-       wFluxDust(2)     = 0.
-#endif
       quota          = c0                  
       CHL2C          = c0                  
       CHL2N          = c0                  
@@ -591,9 +535,6 @@ c---
         vSinkPhy(i,j,1)  = c0
         vSinkDia(i,j,1)  = c0
         vSinkDet(i,j,1)  = c0
-#ifdef RECOM_IRON_LITHOGENIC_PARTICLES
-	vSinkDust(i,j,1) = c0
-#endif
        enddo
       enddo
       do k=2,Nz
@@ -607,9 +548,6 @@ CTW increased sinking speed
 #else
          vSinkDet(i,j,k) = Vdet*maskC(i,j,k,bi,bj)
 #endif /* ALLOW_SINK_INCREASE */
-#ifdef RECOM_IRON_LITHOGENIC_PARTICLES
-	 vSinkDust(i,j,k)= Vdust*maskC(i,j,k,bi,bj)
-#endif /* RECOM_IRON_LITHOGENIC_PARTICLES */
         enddo
        enddo
       enddo
@@ -713,34 +651,6 @@ CJH the same profile
      &          sms(i,j,k,bi,bj, izoo2c)) 
 #endif /* RECOM_ZOO2 */        
 
-#ifdef RECOM_MANY_LIGANDS
-        rlig1 = max(tiny,state(i,j,k,bi,bj,ilig1) + 
-     &         sms(i,j,k,bi,bj,ilig1))
-        rlig2 = max(tiny,state(i,j,k,bi,bj,ilig2) + 
-     &         sms(i,j,k,bi,bj,ilig2))
-        rlig3 = max(tiny,state(i,j,k,bi,bj,ilig3) + 
-     &         sms(i,j,k,bi,bj,ilig3))
-        rlig4 = max(tiny,state(i,j,k,bi,bj,ilig4) + 
-     &         sms(i,j,k,bi,bj,ilig4))
-        rlig5 = max(tiny,state(i,j,k,bi,bj,ilig5) + 
-     &         sms(i,j,k,bi,bj,ilig5))
-#endif /* RECOM_MANY_LIGANDS */
-
-#ifdef RECOM_IRON_VARIABLE_LIGANDS
-        rligw = max(tiny,state(i,j,k,bi,bj,iligw) + 
-     &         sms(i,j,k,bi,bj,iligw))
-#ifdef RECOM_IRON_TWO_LIGANDS
-        rligs = max(tiny,state(i,j,k,bi,bj,iligs) + 
-     &         sms(i,j,k,bi,bj,iligs))
-#endif /* RECOM_IRON_TWO_LIGANDS */
-#endif /* RECOM_IRON_VARIABLE_LIGANDS */ 
-
-#ifdef RECOM_IRON_LITHOGENIC_PARTICLES
-        dust  = max(tiny,state(i,j,k,bi,bj,idust) +
-     &       sms(i,j,k,bi,bj,idust))
-        part_l  = max(tiny,state(i,j,k,bi,bj,ipart) +
-     &       sms(i,j,k,bi,bj,ipart))
-#endif /* RECOM_IRON_LITHOGENIC_PARTICLES */
 #ifdef RECOM_MARSHALL
         D1 = max(tiny,state(i,j,k,bi,bj,id1) + 
      &       sms(i,j,k,bi,bj,id1))
@@ -889,10 +799,8 @@ C     - store kdzLower for next layer
 #endif
         
 #ifdef RECOM_WAVEBANDS
-c ANNA if wavebands then uses spectral alphachl derived from spectral alpha * I
-c     so first get value for alphachl_nl * PARwlocal (value will depend on matchup between
-c     spectra of alphachl_nl (ie. aphy_chl) and PARwlocal) and integrate alpha*PAR over
-c     wavebands to get alpha_I
+c     Get value for alphachl_nl * PARwlocal (value will depend on matchup between spectra of
+c     alphachl_nl and PARwlocal) and integrate the product over wavebands to get alpha_I
            alpha_I = 0.d0
            alpha_I_dia = 0.d0
            do nl = 1,tlam
@@ -905,7 +813,7 @@ c     Units of alpha_nl and alpha_mean m2 mgChla-1 mmolC uE-1 (x86400 s d-1)
            alpha_I = alpha_I*86400
            alpha_I_dia = alpha_I_dia*86400
 c#else
-c Without spectral alpha, the single value of alpha (parameter) is used.
+c     Without spectral alpha, the single value of alpha (parameter) is used.
 c     It should be comparable to alpha_mean precomputed in recom_init_vari.F           
 C     Check the units of PARave and PARlocal.
 c           alpha=alpha_mean
@@ -1178,16 +1086,7 @@ C     end of assimilation section
 
 C     iron chemistry
         if ( FeLimit ) then
-#ifdef RECOM_IRON_VARIABLE_LIGANDS
-#ifdef RECOM_IRON_TWO_LIGANDS
-           freeFe=iron_chemistry_2ligands(Fe, rligw, rligs, 
-     &               ligandStabConst, ligandStabConst_str )
-#else
-           freeFe=iron_chemistry( Fe, rligw, ligandStabConst )
-#endif
-#else
            freeFe=iron_chemistry( Fe, totalLigand, ligandStabConst )
-#endif
         endif
 C     end iron chemistry
 
@@ -1621,11 +1520,7 @@ C constant Fe:N ratio
      &       + rho_N * arrFunc               * DON
 #endif
      &                )
-#ifdef RECOM_IRON_LITHOGENIC_PARTICLES
-     &       - (kScavFe*detC + kScavFe_dust*(dust+part_L)) * freeFe
-#else
      &       - kScavFe     *detC             * freeFe
-#endif
      &                      ) * dt           + sms(i,j,k,bi,bj,ife)
 #else
 C constant Fe:C ratio
@@ -1651,11 +1546,7 @@ C constant Fe:C ratio
      &       + zoo2RespFlux
 #endif         
      &                )
-#ifdef RECOM_IRON_LITHOGENIC_PARTICLES
-     &       - (kScavFe*detC + kScavFe_dust*(dust+part_L)) * freeFe
-#else
      &       - kScavFe     *detC             * freeFe
-#endif
      &                      ) * dt           + sms(i,j,k,bi,bj,ife)
 #endif
         else
@@ -1728,226 +1619,7 @@ C ZOO2 C
      &                     ) * dt            + sms(i,j,k,bi,bj,izoo2c)
 
 #endif 
-
-#ifdef RECOM_MANY_LIGANDS
-#ifdef RECOM_CONSTANT_FE2N
-        fe_uptake =  Fe2N * (N_assim * phyC + N_assim_dia * diaC) * dt
-#else
-        fe_uptake =  Fe2C * (C_phot * phyC + C_phot_dia * diaC) * dt
-#endif
-#ifdef RECOM_LIGAND_VARIABLE_RATE
-C unsafe, because of overflow!
-C        remlig(1) = min(2.8e-3, 5.55e-6*exp(2. * rlig1) ) 
-        if (rlig1 .lt. 3.10730) then
-           remlig(1) = 5.55e-6*exp(2. * rlig1) 
-        else
-           remlig(1) = 2.8e-3
-        endif
-#endif
-        sms(i,j,k,bi,bj,ilig1) = maskC(i,j,k,bi,bj) * (
-     &       lig2n(1) * reminN * arrFunc    * detN
-     &       + lig2n2(1) * (lossN*limitFacN    * phyN
-     &       + lossN_d*limitFacN_dia           * diaN
-     &       + lossN_z                         * hetN
-#ifdef RECOM_ZOO2
-     &       + lossN_z2                        * zoo2N
-#endif
-     &                                                )
-     &       - (remlig(1) * arrFunc)        * rlig1
-     &       - lig_phred(1) * PARave*rIRmax * rlig1
-     &                     )  * dt  
-     &       - lig_upt(1)*min( fe_uptake, rlig1)        
-     &       + sms(i,j,k,bi,bj,ilig1) 
-#ifdef RECOM_LIGAND_VARIABLE_RATE
-        if (rlig2 .lt. 3.10730) then
-           remlig(2) = 5.55e-6*exp(2. * rlig2) 
-        else
-           remlig(2) = 2.8e-3
-        endif
-#endif
-        sms(i,j,k,bi,bj,ilig2) = maskC(i,j,k,bi,bj) * (
-     &       lig2n(2) * reminN * arrFunc    * detN
-     &       + lig2n2(2) * (lossN*limitFacN    * phyN
-     &       + lossN_d*limitFacN_dia           * diaN
-     &       + lossN_z                         * hetN
-#ifdef RECOM_ZOO2
-     &       + lossN_z2                        * zoo2N
-#endif
-     &                                                )
-     &       - (remlig(2) * arrFunc)        * rlig2
-     &       - lig_phred(2) * PARave*rIRmax * rlig2
-     &                     )  * dt      
-     &       - lig_upt(2)*min( fe_uptake, rlig2)        
-     &       + sms(i,j,k,bi,bj,ilig2) 
-#ifdef RECOM_LIGAND_VARIABLE_RATE
-        if (rlig3 .lt. 3.10730) then
-           remlig(3) = 5.55e-6*exp(2. * rlig3) 
-        else
-           remlig(3) = 2.8e-3
-        endif
-#endif
-        sms(i,j,k,bi,bj,ilig3) = maskC(i,j,k,bi,bj) * (
-     &       lig2n(3) * reminN * arrFunc    * detN
-     &       + lig2n2(3) * (lossN*limitFacN    * phyN
-     &       + lossN_d*limitFacN_dia           * diaN
-     &       + lossN_z                         * hetN
-#ifdef RECOM_ZOO2
-     &       + lossN_z2                        * zoo2N
-#endif
-     &                                                )
-     &       - (remlig(3) * arrFunc)        * rlig3
-     &       - lig_phred(3) * PARave*rIRmax * rlig3
-     &                     )  * dt   
-     &       - lig_upt(3)*min( fe_uptake, rlig3)        
-     &       + sms(i,j,k,bi,bj,ilig3) 
-#ifdef RECOM_LIGAND_VARIABLE_RATE
-        if (rlig4 .lt. 3.10730) then
-           remlig(4) = 5.55e-6*exp(2. * rlig4) 
-        else
-           remlig(4) = 2.8e-3
-        endif
-#endif
-        sms(i,j,k,bi,bj,ilig4) = maskC(i,j,k,bi,bj) * (
-     &       lig2n(4) * reminN * arrFunc    * detN
-     &       + lig2n2(4) * (lossN*limitFacN    * phyN
-     &       + lossN_d*limitFacN_dia           * diaN
-     &       + lossN_z                         * hetN
-#ifdef RECOM_ZOO2
-     &       + lossN_z2                        * zoo2N
-#endif
-     &                                                )
-     &       - (remlig(4) * arrFunc)        * rlig4
-     &       - lig_phred(4) * PARave*rIRmax * rlig4
-     &                     )  * dt   
-     &       - lig_upt(4)*min( fe_uptake, rlig4)        
-     &       + sms(i,j,k,bi,bj,ilig4) 
-#ifdef RECOM_LIGAND_VARIABLE_RATE
-        if (rlig5 .lt. 3.10730) then
-           remlig(5) = 5.55e-6*exp(2. * rlig5) 
-        else
-           remlig(5) = 2.8e-3
-        endif
-#endif
-        sms(i,j,k,bi,bj,ilig5) = maskC(i,j,k,bi,bj) * (
-     &       lig2n(5) * reminN * arrFunc    * detN
-     &       + lig2n2(5) * (lossN*limitFacN    * phyN
-     &       + lossN_d*limitFacN_dia           * diaN
-     &       + lossN_z                         * hetN
-#ifdef RECOM_ZOO2
-     &       + lossN_z2                        * zoo2N
-#endif
-     &                                                )
-     &       - (remlig(5) * arrFunc)        * rlig5
-     &       - lig_phred(5) * PARave*rIRmax * rlig5
-     &                     )  * dt     
-     &       - lig_upt(5)*min( fe_uptake, rlig5)        
-     &       + sms(i,j,k,bi,bj,ilig5) 
-#endif
-#ifdef RECOM_IRON_VARIABLE_LIGANDS
-#ifdef RECOM_CONSTANT_FE2N
-        fe_uptake =  Fe2N * (N_assim * phyC + N_assim_dia * diaC) * dt
-#else
-        fe_uptake =  Fe2C * (C_phot * phyC + C_phot_dia * diaC) * dt
-#endif /* RECOM_CONSTANT_FE2N */
-        coag = (114.0D-6 * eoC + 5.09D-3 * detC)
-#ifdef RECOM_LIGAND_VARIABLE_RATE
-C unsafe, because of overflow!
-C        remlig(1) = min(2.8e-3, 5.55e-6*exp(2. * rligw) ) 
-        if (rligw .lt. 3.10730) then
-           remlig = 5.55e-6*exp(2. * rligw) 
-        else
-           remlig = 2.8e-3
-        endif
-C correct for T0 = 15 instead of 0 
-        remlig = remlig*2.3575
-#endif /* RECOM_LIGAND_VARIABLE_RATE */
-#ifdef RECOM_IRON_TWO_LIGANDS
-        feligw = rligw / (1.0 + ligandStabConst*freeFe)
-        ligw_uptake = fe_uptake * feligw / (Fe + tiny)
-C weak ligands are produced by remineralization
-        sms(i,j,k,bi,bj,iligw) = maskC(i,j,k,bi,bj) * (
-#ifdef RECOM_IRON_LIGANDS_CARBON
-     &       lig2c * reminC * arrFunc    * detC
-#else
-     &       lig2n * reminN * arrFunc    * detN
-#endif /* RECOM_IRON_LIGANDS_CARBON */
-     &       + lig_phred_str * PARave*rIRmax * rligs
-     &       - (remlig * arrFunc)        * rligw
-     &       - lig_phred * PARave*rIRmax * rligw
-     &       - coag * lig_lco * rligw
-     &                     )  * dt  
-     &       - lig_upt * min( ligw_uptake, rligw)        
-     &       + sms(i,j,k,bi,bj,iligw) 
-C strong ligands are produced by DOC production
-        feligs = rligs / (1.0 + ligandStabConst_str*freeFe)
-        ligs_uptake = fe_uptake * feligs / (Fe + tiny)
-        sms(i,j,k,bi,bj,iligs) = maskC(i,j,k,bi,bj) * (
-#ifdef RECOM_IRON_LIGANDS_CARBON
-     &       lig2c_str * (lossC*limitFacN * phyC
-     &       + lossC_d*limitFacN_dia      * diaC 
-     &       + lossC_z                    * hetC
-#ifdef RECOM_ZOO2
-     &       + lossC_z2                   * zoo2C
-#endif
-     &                                            )        
-#else
-     &       lig2n_str * (lossN*limitFacN * phyN
-     &       + lossN_d*limitFacN_dia      * diaN
-     &       + lossN_z                    * hetN
-#ifdef RECOM_ZOO2
-     &       + lossN_z2                   * zoo2N
-#endif
-     &                                            )        
-#endif /* RECOM_IRON_LIGANDS_CARBON */
-     &       - (remlig_str * arrFunc)        * rligs
-     &       - lig_phred_str * PARave*rIRmax * rligs
-     &       - coag * lig_lco_str            * rligs
-     &                     )  * dt  
-     &       - lig_upt_str * min( ligs_uptake, rligs)        
-     &       + sms(i,j,k,bi,bj,iligs) 
-#else
-C One uniform ligand, produced both by POC remineralization and by DOC production
-        sms(i,j,k,bi,bj,iligw) = maskC(i,j,k,bi,bj) * (
-#ifdef RECOM_IRON_LIGANDS_CARBON
-     &       lig2c * reminC * arrFunc    * detC
-     &       + lig2c2 * (lossC*limitFacN * phyC
-     &       + lossC_d*limitFacN_dia     * diaC 
-     &       + lossC_z                   * hetC
-#ifdef RECOM_ZOO2
-     &       + lossC_z2                  * zoo2C
-#endif
-     &                                            )
-#else
-     &       lig2n * reminN * arrFunc    * detN
-     &       + lig2n2 * (lossN*limitFacN * phyN
-     &       + lossN_d*limitFacN_dia     * diaN
-     &       + lossN_z                   * hetN
-#ifdef RECOM_ZOO2
-     &       + lossN_z2                  * zoo2N
-#endif
-     &                                            )
-#endif /* RECOM_IRON_LIGANDS_CARBON */
-     &       - (remlig * arrFunc)        * rligw
-     &       - lig_phred * PARave*rIRmax * rligw
-     &       - coag * lig_lco * rligw
-     &                     )  * dt  
-     &       - lig_upt*min( fe_uptake, rligw)        
-     &       + sms(i,j,k,bi,bj,iligw) 
-#endif /* RECOM_IRON_TWO_LIGANDS */
-#endif /* RECOM_IRON_VARIABLE_LIGANDS */
  
-#ifdef RECOM_IRON_LITHOGENIC_PARTICLES
-        sms(i,j,k,bi,bj,idust) = maskC(i,j,k,bi,bj) * (
-     &       -k_coag * (part_l + 24.0*detC + 0.33*dust) * dust
-     &       + (reminC * arrFunc + k_disagg) * part_l   
-     &                     )  * dt  
-     &       + sms(i,j,k,bi,bj,idust) 
-        sms(i,j,k,bi,bj,ipart) = maskC(i,j,k,bi,bj) * (
-     &       k_coag * (part_l + 24.0*detC + 0.33*dust) * dust
-     &       - (reminC * arrFunc + k_disagg) * part_l   
-     &                     )  * dt  
-     &       + sms(i,j,k,bi,bj,ipart) 
-#endif /* RECOM_IRON_LITHOGENIC_PARTICLES */ 
 C_________________________________________________________________________
 C
 C_________________________________________________________________________
@@ -2132,120 +1804,6 @@ C - diatom silica growth limitation
         endif
 #endif
         
-#ifdef RECOM_IRON_VARIABLE_LIGANDS
-        ndiags3d_used = 9
-#ifdef RECOM_MAREMIP
-     &    + 28
-#endif /* RECOM_MAREMIP */
-        
-#ifdef RECOM_IRON_TWO_LIGANDS
-C - weak ligand source from POC remineralization
-        diags3d(i,j,k,ndiags3d_used+1) = 
-     &       diags3d(i,j,k,ndiags3d_used+1) + 1./real(bio_step) * (
-#ifdef RECOM_IRON_LIGANDS_CARBON
-     &       lig2c * reminC * arrFunc    * detC)
-#else
-     &       lig2n * reminN * arrFunc    * detN) 
-#endif /* RECOM_IRON_LIGANDS_CARBON */
-C - weak ligand source from strong ligand photodegradation
-        diags3d(i,j,k,ndiags3d_used+2) = 
-     &       diags3d(i,j,k,ndiags3d_used+2) + 1./real(bio_step) * (
-     &       lig_phred_str * PARave*rIRmax * rligs )
-C - weak ligand sink from bacterial degradation
-        diags3d(i,j,k,ndiags3d_used+3) = 
-     &       diags3d(i,j,k,ndiags3d_used+3) + 1./real(bio_step) * (
-     &       - (remlig * arrFunc)        * rligw
-     &       )
-C - weak ligand sink from photodegradation
-        diags3d(i,j,k,ndiags3d_used+4) = 
-     &       diags3d(i,j,k,ndiags3d_used+4) + 1./real(bio_step) * (
-     &       - lig_phred * PARave*rIRmax * rligw
-     &       )
-C - weak ligand sink from phytoplankton uptake
-        diags3d(i,j,k,ndiags3d_used+5) = 
-     &       diags3d(i,j,k,ndiags3d_used+5) + 1./real(bio_step) * (
-     &       - lig_upt * min( ligw_uptake, rligw) / dt        
-     &       )
-C - weak ligand sink from coagulation
-        diags3d(i,j,k,ndiags3d_used+6) = 
-     &       diags3d(i,j,k,ndiags3d_used+6) + 1./real(bio_step) * (
-     &       - coag * lig_lco * rligw
-     &       )
-        
-C - strong ligand source from DOC production
-        diags3d(i,j,k,ndiags3d_used+7) = 
-     &       diags3d(i,j,k,ndiags3d_used+7) + 1./real(bio_step) * (
-#ifdef RECOM_IRON_LIGANDS_CARBON
-     &       lig2c_str * (lossC*limitFacN * phyC
-     &       + lossC_d*limitFacN_dia      * diaC 
-     &       + lossC_z                    * hetC))
-#else
-     &       lig2n_str * (lossN*limitFacN      * phyN
-     &       + lossN_d*limitFacN_dia           * diaN
-     &       + lossN_z                         * hetN))
-#endif /* RECOM_IRON_LIGANDS_CARBON */
-C - strong ligand sink from bacterial degradation
-        diags3d(i,j,k,ndiags3d_used+8) = 
-     &       diags3d(i,j,k,ndiags3d_used+8) + 1./real(bio_step) * (
-     &       - (remlig_str * arrFunc)        * rligs
-     &       )
-C - strong ligand sink from photodegradation
-        diags3d(i,j,k,ndiags3d_used+9) = 
-     &       diags3d(i,j,k,ndiags3d_used+9) + 1./real(bio_step) * (
-     &       - lig_phred_str * PARave*rIRmax * rligs
-     &       )
-C - strong ligand sink from phytoplankton uptake
-        diags3d(i,j,k,ndiags3d_used+10) = 
-     &       diags3d(i,j,k,ndiags3d_used+10) + 1./real(bio_step) * (
-     &       - lig_upt_str * min( ligs_uptake, rligs) / dt        
-     &       )
-C - strong ligand sink from coagulation
-        diags3d(i,j,k,ndiags3d_used+11) = 
-     &       diags3d(i,j,k,ndiags3d_used+11) + 1./real(bio_step) * (
-     &       - coag * lig_lco_str            * rligs
-     &       )
-
-#else /* RECOM_IRON_TWO_LIGANDS */
-C - ligand source from POC remineralization
-        diags3d(i,j,k,ndiags3d_used+1) = 
-     &       diags3d(i,j,k,ndiags3d_used+1) + 1./real(bio_step) * (
-#ifdef RECOM_IRON_LIGANDS_CARBON
-     &       lig2c * reminC * arrFunc    * detC)
-#else
-     &       lig2n * reminN * arrFunc    * detN)
-#endif /* RECOM_IRON_LIGANDS_CARBON */ 
-C - ligand source from DOC excretion
-        diags3d(i,j,k,ndiags3d_used+2) = 
-     &       diags3d(i,j,k,ndiags3d_used+2) + 1./real(bio_step) * (
-#ifdef RECOM_IRON_LIGANDS_CARBON
-     &       lig2c2 * (lossC*limitFacN * phyC
-     &       + lossC_d*limitFacN_dia     * diaC 
-     &       + lossC_z                   * hetC))
-#else
-     &       lig2n2 * (lossN*limitFacN    * phyN
-     &       + lossN_d*limitFacN_dia           * diaN
-     &       + lossN_z                         * hetN))
-#endif /* RECOM_IRON_LIGANDS_CARBON */ 
-C - ligand sink from remineralization
-        diags3d(i,j,k,ndiags3d_used+3) = 
-     &       diags3d(i,j,k,ndiags3d_used+3) - 1./real(bio_step) * (
-     &        (remlig * arrFunc)        * rligw)
-C - ligand sink from photodegradation
-        diags3d(i,j,k,ndiags3d_used+4) = 
-     &       diags3d(i,j,k,ndiags3d_used+4) - 1./real(bio_step) * (
-     &       lig_phred * PARave*rIRmax * rligw)
-C - ligand sink from phytoplankton uptake
-        diags3d(i,j,k,ndiags3d_used+5) = 
-     &       diags3d(i,j,k,ndiags3d_used+5) - 1./real(bio_step) * (
-     &       lig_upt*min( fe_uptake, rligw)/dt)        
-C - ligand sink from coagulation
-        diags3d(i,j,k,ndiags3d_used+6) = 
-     &       diags3d(i,j,k,ndiags3d_used+6) - 1./real(bio_step) * (
-     &       coag * lig_lco * rligw)        
-#endif /* RECOM_IRON_TWO_LIGANDS */
-#endif /* RECOM_IRON_VARIABLE_LIGANDS */
-
-
 
 #ifdef RECOM_PHOTODAMAGE
 C Diagnostics photodamage          
@@ -2253,13 +1811,6 @@ C Diagnostics photodamage
         ndiags3d_used = 9
 #ifdef RECOM_MAREMIP
      &    + 28
-#endif
-#ifdef RECOM_IRON_VARIABLE_LIGANDS
-#ifdef RECOM_IRON_TWO_LIGANDS
-     &    + 11
-#else        
-     &    + 6
-#endif
 #endif
        if ( nDiags3d .ge. (ndiags3d_used+8) ) then
 C - small phyto Photosynthesis
@@ -2305,13 +1856,6 @@ C Diagnostics Non-photosynthetic pigments
 #ifdef RECOM_MAREMIP
      &    + 28
 #endif
-#ifdef RECOM_IRON_VARIABLE_LIGANDS
-#ifdef RECOM_IRON_TWO_LIGANDS
-     &    + 11
-#else        
-     &    + 6
-#endif
-#endif
 #ifdef RECOM_PHOTODAMAGE
      &    + 8        
 #endif 
@@ -2341,13 +1885,6 @@ C Diagnostics spectral light
         ndiags3d_used = 9
 #ifdef RECOM_MAREMIP
      &    + 28
-#endif
-#ifdef RECOM_IRON_VARIABLE_LIGANDS
-#ifdef RECOM_IRON_TWO_LIGANDS
-     &    + 11
-#else        
-     &    + 6
-#endif
 #endif
 #ifdef RECOM_PHOTODAMAGE
      &    + 8        
@@ -2451,43 +1988,6 @@ C change of Alkalinity with dissolution of CaCO3
      &         + 2.0 * decayBenthos(4) * dt * maskC(i,j,kLoc,bi,bj) *
      &           recip_drF(kLoc)*recip_hfacc(i,j,kLoc,bi,bj)
 
-#ifdef RECOM_MANY_LIGANDS
-C change of ligands (proportional to change in N)
-          sms(i,j,kLoc,bi,bj,ilig1)  = sms(i,j,kLoc,bi,bj,ilig1)
-     &      + lig2n(1) * decayBenthos(1) * dt * maskC(i,j,kLoc,bi,bj) * 
-     &        recip_drF(kLoc)*recip_hfacc(i,j,kLoc,bi,bj)
-          sms(i,j,kLoc,bi,bj,ilig2)  = sms(i,j,kLoc,bi,bj,ilig2)
-     &      + lig2n(2) * decayBenthos(1) * dt * maskC(i,j,kLoc,bi,bj) * 
-     &        recip_drF(kLoc)*recip_hfacc(i,j,kLoc,bi,bj)
-          sms(i,j,kLoc,bi,bj,ilig3)  = sms(i,j,kLoc,bi,bj,ilig3)
-     &      + lig2n(3) * decayBenthos(1) * dt * maskC(i,j,kLoc,bi,bj) * 
-     &        recip_drF(kLoc)*recip_hfacc(i,j,kLoc,bi,bj)
-          sms(i,j,kLoc,bi,bj,ilig4)  = sms(i,j,kLoc,bi,bj,ilig4)
-     &      + lig2n(4) * decayBenthos(1) * dt * maskC(i,j,kLoc,bi,bj) * 
-     &        recip_drF(kLoc)*recip_hfacc(i,j,kLoc,bi,bj)
-          sms(i,j,kLoc,bi,bj,ilig5)  = sms(i,j,kLoc,bi,bj,ilig5)
-     &      + lig2n(5) * decayBenthos(1) * dt * maskC(i,j,kLoc,bi,bj) * 
-     &        recip_drF(kLoc)*recip_hfacc(i,j,kLoc,bi,bj)
-#endif
-#ifdef RECOM_IRON_VARIABLE_LIGANDS
-C change of ligands (proportional to change in N)
-          sms(i,j,kLoc,bi,bj,iligw)  = sms(i,j,kLoc,bi,bj,iligw)
-#ifdef RECOM_IRON_LIGANDS_CARBON
-     &      + lig2c * decayBenthos(2) * dt * maskC(i,j,kLoc,bi,bj) * 
-#else
-     &      + lig2n * decayBenthos(1) * dt * maskC(i,j,kLoc,bi,bj) * 
-#endif
-     &        recip_drF(kLoc)*recip_hfacc(i,j,kLoc,bi,bj)
-c          ndiags3d_used = 8
-C#ifdef RECOM_MAREMIP
-c     &    + 28
-C#endif
-cC - ligand source from POC remineralization
-c          diags3d(i,j,k,ndiags3d_used+1) = 
-c     &       diags3d(i,j,k,ndiags3d_used+1) + (
-c     &       lig2n * decayBenthos(1) * maskC(i,j,kLoc,bi,bj) * 
-c     &        recip_drF(kLoc) * recip_hfacc(i,j,kLoc,bi,bj))
-#endif
 C------------------------------------
 C Diagnostics for diagenetic fluxes from sediment into water
 C------------------------------------
@@ -2972,56 +2472,7 @@ C - sinking flux of CaCO3
           enddo
        enddo
 #endif
-
-#ifdef RECOM_IRON_LITHOGENIC_PARTICLES
-C----------------------------------------------------------------------
-C Sinking of lithogenic part of detritus; this compartment sinks
-C together with detritus, i.e. at the same speed.
-C----------------------------------------------------------------------
-       call recom_sinking(dt,recip_drF,recip_drC,recip_hFacC,maskC, 
-     &      vSinkDet,state(1-Olx,1-Oly,1,1,1,ipart),sink,
-#ifdef RECOM_EXPORT_DIAGNOSTICS
-     &      export,
-#endif
-#ifdef RECOM_MAREMIP
-     &      export3d,
-#endif
-     &      Nz,iMin,iMax,jMin,jMax,bi,bj) 
-       do k = 1,Nz
-        do j = jMin,jMax
-         do i = iMin,iMax
-          sms(i,j,k,bi,bj,ipart) = sms(i,j,k,bi,bj,ipart) + sink(i,j,k)
-         enddo
-        enddo
-       enddo
-#endif /* RECOM_IRON_LITHOGENIC_PARTICLES */
       endif
-
-#ifdef RECOM_IRON_LITHOGENIC_PARTICLES
-C----------------------------------------------------------------------
-C Sinking of small dust particles; they sink at their own (constant
-C and small) rate 
-C----------------------------------------------------------------------
-      if ( Vdust .gt. c0 ) then
-C         advect detritus with a different velocity
-       call recom_sinking(dt,recip_drF,recip_drC,recip_hFacC,maskC, 
-     &      vSinkDust,state(1-Olx,1-Oly,1,1,1,idust),sink,
-#ifdef RECOM_EXPORT_DIAGNOSTICS
-     &      export,
-#endif
-#ifdef RECOM_MAREMIP
-     &      export3d,
-#endif
-     &      Nz,iMin,iMax,jMin,jMax,bi,bj) ! DetN
-       do k = 1,Nz
-        do j = jMin,jMax
-         do i = iMin,iMax
-          sms(i,j,k,bi,bj,idust) = sms(i,j,k,bi,bj,idust) + sink(i,j,k)
-         enddo
-        enddo
-       enddo
-       endif
-#endif /* RECOM_IRON_LITHOGENIC_PARTICLES */
 
 C
 C detritus and phytoplankton sink into the benthic layer and are lost
@@ -3081,23 +2532,6 @@ C the benthic layer
      &      - wFluxPhy(4)*dt
      &      *recip_drF(kLoc)*recip_hfacc(i,j,kLoc,bi,bj)
 
-#ifdef RECOM_IRON_LITHOGENIC_PARTICLES
-C----------------------------------------------------------------------------
-C LITHOGENIC PARTICLES are lost when they reach the sediment
-C 
-C We remove them from the lowermost ocean layer, but do not accumulate them 
-C in the benthos layer so far (i.e. there is not fifth benthos variable 
-C lithogenic material)
-C----------------------------------------------------------------------------
-      wFluxDust(1) = vSinkDust(i,j,kLoc)*state(i,j,kLoc,bi,bj,idust)
-      sms(i,j,kLoc,bi,bj,idust)  = sms(i,j,kLoc,bi,bj,idust) 
-     &      - wFluxDust(1)*dt
-     &      *recip_drF(kLoc)*recip_hfacc(i,j,kLoc,bi,bj)
-      wFluxDust(2) = vSinkDet(i,j,kLoc)*state(i,j,kLoc,bi,bj,ipart)
-      sms(i,j,kLoc,bi,bj,ipart)  = sms(i,j,kLoc,bi,bj,ipart) 
-     &      - wFluxDust(2)*dt
-     &      *recip_drF(kLoc)*recip_hfacc(i,j,kLoc,bi,bj)
-#endif
 
 C Now put everything into sediment layer
        do ii=1,4
@@ -3153,175 +2587,7 @@ CEOP
 
       RETURN
       END
-#ifdef RECOM_IRON_TWO_LIGANDS
-#ifdef RECOM_IRON_TWO_LIGANDS_ITERATIVE
-      _RL function iron_chemistry_2ligands(fet,l1t,l2t,k1,k2) 
-
-      implicit none
-
-      _RL l1t,l2t,fet,k1,k2,coeff(4)
-      _RL x1, x2, xguess, xacc, xsol
-      integer niter
-
-C coefficients of the polynomial
-      coeff(1) = k1*k2
-      coeff(2) = ( k1*k2*(l1t + l2t - fet) + k1 + k2 )
-      coeff(3) = ( 1 - (k1 + k2)*fet + k1*l1t + k2*l2t )
-      coeff(4) = -fet
-
-C initial guesses
-      x1 = 0
-      x2 = fet
-      xguess = fet/10.
-      xacc = 1.0e-6
-
-C solve the equations
-      call recom_iterate_fe(coeff, x1, x2, xguess, xacc,
-     &     xsol, niter)
-
-C return result
-      iron_chemistry_2ligands = xsol
-      end
-
-      subroutine recom_iterate_fe(coeff,
-     &     X1, X2, xguess, XACC,
-     &     xsol, NITER )
-      implicit none
-
-C     routine arguments
-C     Input:
-C     X1, X2: minimum and maximum values expected for result
-C     xguess: first guess of result
-C     XACC  : required accuracy for convergence
-      _RL coeff(4), X1, X2, xguess, XACC
-C     Output:
-C     xsol  : solution of iteration
-C     NITER : actual number of iterations required to obtain xsol
-      _RL xsol
-      integer NITER
-
-C     local variables
-      integer MAXIT
-      _RL FL, DF, DFM, FH, XL, XH, SWAP, F, FM, TEMP,xm      
-
-      MAXIT=100
-      CALL recom_poly3(coeff,X1,FL,DF)
-      CALL recom_poly3(coeff,X2,FH,DF)
-      IF(FL .LT. 0.0) THEN
-        XL=X1
-        XH=X2
-      ELSE
-        XH=X1
-        XL=X2
-        SWAP=FL
-        FL=FH
-        FH=SWAP
-      END IF
-
-      CALL recom_poly3(coeff,xguess,F,DF)
-      IF (F .LT. 0.0) THEN
-        XL=xguess
-      ELSE
-        XH=xguess
-      END IF
-
-      DO NITER=1,MAXIT
-       xm=0.5*(XL+XH)
-       CALL recom_poly3(coeff,xm,FM,DFM)
-       TEMP=xm-FM/DFM
-       IF (TEMP .LT. XH .AND. TEMP .GT. XL) THEN
-         CALL recom_poly3(coeff,TEMP,F,DF)
-         xsol=TEMP
-       ELSE
-         xsol=xm
-         F=FM
-       END IF
-        IF(ABS(F) .LT. XACC)RETURN 
-
-        IF(F .LT. 0.0) THEN
-           XL=xsol
-           FL=F
-        ELSE
-           XH=xsol
-           FH=F
-        END IF
-      END DO
-      RETURN
-      END 
-
-      subroutine recom_poly3(coeff,x,fn,df)
-C----------------------------------------------------------------------
-C This subroutine calculates the value of a third-order polynomial and
-C its derivative
-C Input
-C     coeff: vector of foer coefficients
-C     x: value at which to evaluate the polynomial
-C Output
-C     fn = coeff(1)*x**3 + coeff(2)*x**2 + coeff(3)*x + coeff(4)
-C     df = 3*coeff(1)*x**2 + 2*coeff(2)*x + coeff(3)
-C----------------------------------------------------------------------
-
-      implicit none
-C     routine arguments
-      _RL coeff(4), x, fn, df
-      fn = ((coeff(1)*x + coeff(2))*x + coeff(3))*x + coeff(4)
-      df = (3.0*coeff(1)*x + 2.0*coeff(2))*x + coeff(3)
-
-      END 
-#else
-      _RL function iron_chemistry_2ligands(fet,l1t,l2t,k1,k2) 
-C----------------------------------------------------------------------
-C explicit calculation of the third-order polynomial resulting from the 
-C chemical equilibrium between two ligands and free iron
-C
-C so far, we assume that the discriminant is always smaller than zero;
-C otherwise we would have to include a case distinction. Do we need that?
-C Negative discriminant means that we have thee real solutions; it turns 
-C out that tw of those are negative. 
-C-----------------------------------------------------------------------
-      implicit none
-
-      _RL l1t,l2t,fet,k1,k2
-      _RL a3,a2,a1,a0,a,b,c,p,q,discr,rho,phi,amp,pi
-      _RL one3rd, one27th
-      _RL fe1,fe2,fe3
-
-C coefficients of the 4th-order polynomial
-      a3 = k1*k2
-      a2 = ( k1*k2*(l1t + l2t - fet) + k1 + k2 )
-      a1 = ( 1 - (k1 + k2)*fet + k1*l1t + k2*l2t )
-      a0 = -fet
-
-C coefficients of the normalized polynomial
-      a = a2/a3
-      b = a1/a3
-      c = a0/a3
-
-C some numbers that are used several times
-      one3rd = 1.0/3.0
-      one27th = 1.0/27.0
-
-C now solve the polynomial stepwise
-      p = b - a*a*one3rd
-      q = c - a*b*one3rd + 2.0*a*a*a*one27th
-
-      discr = q*q/4.0 + p*p*p*one27th
-
-      rho = sqrt(-(p*p*p*one27th))
-      phi = acos(-q/(2.0*rho))
-      amp = 2.0*rho**one3rd
-      pi = 3.1415926535897931
-
-C the equation has three real roots
-      fe1 = amp*cos(phi*one3rd) - a*one3rd
-      fe2 = amp*cos((phi + 2.0*pi)*one3rd) - a*one3rd
-      fe3 = amp*cos((phi + 4.0*pi)*one3rd) - a*one3rd
-
-      iron_chemistry_2ligands = max(fe1,fe2,fe3)
-
-      end
-#endif
-#else
+      
       _RL FUNCTION IRON_CHEMISTRY( Fe, totalLigand, ligandStabConst )
 C
 C     compute free iron that is available for scavenging according
@@ -3362,5 +2628,4 @@ C     no free iron
 
       RETURN
       END
-#endif
 

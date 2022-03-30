@@ -591,39 +591,8 @@ C
       _EXCH_XY_RL(tmp13es, myThid )
 #endif /* OASIM */
 C      
-#ifdef RECOM_IRON_HYDROTHERMAL
-C     if a file for hydrothermal iron input is defined, read it in; else
-C     initialize it to zeros
-      _BEGIN_MASTER(myThid)
-      IF ( recom_hydroFile .NE. ' '  ) THEN
-         CALL READ_FLD_XYZ_RL(recom_hydroFile,' ',
-     &        feHydrothermal(1-OLx,1-OLy,1,1,1),0,myThid)
-      ENDIF
-      _END_MASTER(myThid)
 
-C shifted the exchange routine outside of master thread!
-      _EXCH_XYZ_RL(feHydrothermal , myThid)
-
-C     Apply mask
-      DO bj = myByLo(myThid), myByHi(myThid)
-         DO bi = myBxLo(myThid), myBxHi(myThid)
-            DO k=1,Nr
-               DO j=1-OLy,sNy+OLy
-                  DO i=1-OLx,sNx+OLx
-                     IF (maskC(i,j,k,bi,bj).EQ.0.)
-     &           feHydrothermal(i,j,k,bi,bj)=0. _d 0
-                  ENDDO
-               ENDDO
-            ENDDO
-         ENDDO
-      ENDDO
-#endif /* RECOM_IRON_HYDROTHERMAL */					 
-
-C     This part can go to recom_sms to take the value of Qyield,
-C     for now, we gave constant values to mQY and mQY_dia
 #ifdef RECOM_WAVEBANDS
-C      mQY = QYmax / 4.596        ! mmolC uE-1
-C      mQY_dia = QYmax_d / 4.596  ! mmolC uE-1     
       mQY = 0.
       mQY_dia = 0.      
            do nl = 1,tlam          

@@ -76,7 +76,7 @@ C       rlamm = darwin_waves(ilam)*1 _d -9       !lambda in m
 C       WtouEins(ilam) = 1 _d 6*rlamm*hcoavo     !Watts to uEin/s conversion
 C      enddo
 c#endif
-c     ANNA set fixed params for WAVEBANDS
+c     read the files
         call wavebands_init_fixed(myThid)
 #endif
 

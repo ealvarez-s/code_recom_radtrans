@@ -1,8 +1,8 @@
 C $Header: /u/gcmpack/MITgcm_contrib/darwin2/pkg/darwin/wavebands_init_vari.F,v 1.2 2013/12/04 21:19:12 jahn Exp $
 C $Name:  $
 
-c ANNA wavebands_init_vari.F assigns actual values to choices made by coin-flips in darwin_generate_phyto.F
-c ANNA wavebands_init_vari.F creates output files
+c wavebands_init_vari.F assigns actual values to phyto types (two separate)
+c wavebands_init_vari.F creates output files
 
 C#include "DARWIN_OPTIONS.h"
 #include "RECOM_OPTIONS.h"      
@@ -52,14 +52,11 @@ C       INTEGER IniUnit1, IniUnit2, IniUnit3
 C       INTEGER IniUnit4, IniUnit5, IniUnit6
 C       INTEGER IniUnit7
 
-C     EVA I didnt find where to set ap_types. Here it works if groups=types and
-C         datafile has 1=small phyto, 2=diatoms.       
+CEA Here groups=types and datafile has 1=small phyto, 2=diatoms (keep the order)       
           do nap=1, tnabp
               ap_type(nap) = nap
           enddo
        
-c ANNA associate the pigment / abs choices for phytoplankton with actual absorption spectra
-c make sure pigment types and actual spectra match - here keep 1-4 in same order as datafile
 C       npmax = 2
 C          do nap=1, tnabp
 C          if (ap_type(np).eq.1) then

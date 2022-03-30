@@ -1,7 +1,7 @@
 C $Header: /u/gcmpack/MITgcm_contrib/darwin2/pkg/darwin/wavebands_init_fixed.F,v 1.6 2013/12/04 21:18:51 jahn Exp $
 C $Name:  $
 
-c ANNA wavebands_init_fixed.F reads-in and assigns input paramters for WAVEBANDS. 
+c wavebands_init_fixed.F reads-in and assigns input paramters for WAVEBANDS/RADTRANS. 
 
 #include "RECOM_OPTIONS.h"
 
@@ -169,9 +169,7 @@ c  Water data files
       endif
       
 
-c phyto data files
-c ANNA phyto input data files must have a column for absorption by PS pigs
-c ANNA easiest way to 'turn off' PS for growth is to put same values in both abs columns
+c phyto input data files with columns for total and PS pigms absorption
       if (darwin_phytoabsorbFile.NE. ' '  ) THEN
         CALL MDSFINDUNIT( iUnit, myThid )
         open(iUnit,file=darwin_phytoabsorbFile,
