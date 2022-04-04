@@ -70,7 +70,7 @@ CEA Radiative Transfer Model
 #define RECOM_BMASS
 #define RECOM_CALC_REFLEC  
 CEA undef to keep chl-specific phyto absorption constant
-#undef RECOM_CALC_APHYT
+#define RECOM_CALC_APHYT
   
 C catch bad CPP-flag combination
 #ifdef DIC_BIOTIC
